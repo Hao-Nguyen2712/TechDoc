@@ -431,3 +431,6 @@ FodyWeavers.xsd
 # Agent tool config folders
 .agents/
 .zcode/
+
+# TechDoc dev infrastructure bind mounts (docker compose)
+/data/
