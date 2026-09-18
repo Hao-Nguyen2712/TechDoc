@@ -20,6 +20,18 @@ _Avoid_: indexing, processing
 A tracked task that runs the Ingestion of one uploaded Document in the background, with a status users can check.
 _Avoid_: queue, task, upload job
 
+**Extraction (Trích xuất)**:
+The Ingestion stage that pulls text out of a Document file, preserving page boundaries (line numbers for TXT).
+_Avoid_: parsing, text extraction
+
+**Chunking (Phân đoạn)**:
+The Ingestion stage that groups extracted text into Chunks, following the document's heading structure where detectable.
+_Avoid_: splitting, segmentation
+
+**Embedding (Nhúng)**:
+The Ingestion stage that computes the dense and sparse vectors carried by each Chunk.
+_Avoid_: vectorization, indexing
+
 **Citation (Trích dẫn)**:
 A reference from an Answer to the Document and page(s) its content came from.
 _Avoid_: source, reference
@@ -39,6 +51,10 @@ _Avoid_: chat, thread, conversation
 **Workspace (Không gian làm việc)**:
 A scope that groups Documents and Sessions; the MVP runs a single default workspace.
 _Avoid_: project, tenant
+
+**Eval Runner (Bộ chạy đánh giá)**:
+A development-only console tool that runs the Golden Set through the real pipeline and reports quality scores; never part of the product.
+_Avoid_: CLI, test runner
 
 **Golden Set (Bộ dữ liệu vàng)**:
 A curated set of Questions with their expected Citations, drawn from real Documents, used to measure retrieval quality after pipeline changes.

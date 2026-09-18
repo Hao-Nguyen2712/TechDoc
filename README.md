@@ -10,7 +10,7 @@ One command brings up all backing services:
 docker compose up -d
 ```
 
-Data lives in `./data/` (gitignored, bind mounts). The Application runs separately and reads endpoints from `src/Application/appsettings.Development.json` (dev-only credentials, committed; real secrets — e.g. the Gemini API key — go in `dotnet user-secrets`).
+Data lives in `./data/` (gitignored, bind mounts). The API (`TechDocAI.Api`) runs separately and reads endpoints from `src/TechDocAI.Api/appsettings.Development.json` (dev-only credentials, committed; real secrets — e.g. the Gemini API key — go in `dotnet user-secrets`).
 
 | Service | Endpoint | Notes |
 |---|---|---|
