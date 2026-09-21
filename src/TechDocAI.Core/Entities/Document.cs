@@ -10,7 +10,6 @@ public class Document
     public required string StorageKey { get; set; }
     public bool NeedsOcr { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-
     public List<IngestionJob> IngestionJobs { get; set; } = new();
     public List<Chunk> Chunks { get; set; } = new();
 }

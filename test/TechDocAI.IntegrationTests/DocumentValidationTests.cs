@@ -1,27 +1,26 @@
-using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http.Headers;
 using Xunit;
 
 namespace TechDocAI.IntegrationTests;
 
-public class DocumentValidationTests : IClassFixture<WebApplicationFactory<Program>>
+public class DocumentValidationTests : IClassFixture<TechDocWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public DocumentValidationTests(WebApplicationFactory<Program> factory)
+    public DocumentValidationTests(TechDocWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }
 
     [Fact]
-    public async Task PostDocuments_WithNonPdfFile_Returns400BadRequest()
+    public async Task PostDocuments_WithUnsupportedFileExtension_Returns400BadRequest()
     {
         // Arrange
         using var content = new MultipartFormDataContent();
-        var byteArrayContent = new ByteArrayContent("Hello world plain text"u8.ToArray());
-        byteArrayContent.Headers.ContentType = MediaTypeHeaderValue.Parse("text/plain");
-        content.Add(byteArrayContent, "file", "test.txt");
+        var byteArrayContent = new ByteArrayContent("Binary document content"u8.ToArray());
+        byteArrayContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        content.Add(byteArrayContent, "file", "document.docx");
 
         // Act
         var response = await _client.PostAsync("/documents", content);

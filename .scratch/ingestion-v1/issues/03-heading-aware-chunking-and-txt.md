@@ -4,11 +4,11 @@
 
 **Blocked by:** 02 — Tracer bullet: upload a PDF and watch it become a Document with Chunks.
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] PDFs with detectable headings are chunked by section, merged to the token budget, no overlap; every Chunk records its heading path
-- [ ] The font heuristic treats the dominant size as body text and short, markedly larger lines as headings
-- [ ] Documents without detectable structure fall back to block cutting with an empty heading path
-- [ ] TXT Documents ingest end-to-end; Chunks record line numbers instead of pages (per ADR 0004)
-- [ ] The token budget is estimated locally (no provider round-trip per Chunk)
-- [ ] The chunker, heading heuristic, and tokenizer are covered by direct unit tests (pure logic, no new seam)
+- [x] PDFs with detectable headings are chunked by section, merged to the token budget, no overlap; every Chunk records its heading path
+- [x] The font heuristic treats the dominant size as body text and short, markedly larger lines as headings
+- [x] Documents without detectable structure fall back to block cutting with an empty heading path
+- [x] TXT Documents ingest end-to-end; Chunks record line numbers instead of pages (per ADR 0004)
+- [x] The token budget is estimated locally (no provider round-trip per Chunk)
+- [x] The chunker, heading heuristic, and tokenizer are covered by direct unit tests (pure logic, no new seam)

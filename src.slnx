@@ -9,6 +9,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="test/TechDocAI.IntegrationTests/TechDocAI.IntegrationTests.csproj" />
+    <Project Path="test/TechDocAI.UnitTests/TechDocAI.UnitTests.csproj" />
   </Folder>
   <Folder Name="/tools/" />
 </Solution>

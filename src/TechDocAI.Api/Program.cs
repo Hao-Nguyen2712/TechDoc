@@ -1,55 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Minio;
-using TechDocAI.Core.Interfaces;
-using TechDocAI.Infrastructure.Chunkers;
-using TechDocAI.Infrastructure.Extractors;
+using TechDocAI.Api.Endpoints;
+using TechDocAI.Infrastructure.Extensions;
 using TechDocAI.Infrastructure.Persistence;
-using TechDocAI.Infrastructure.Queue;
-using TechDocAI.Infrastructure.Services;
-using TechDocAI.Infrastructure.Storage;
-using TechDocAI.Infrastructure.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+// Add API & Infrastructure services
 builder.Services.AddOpenApi();
-
-// Postgres DbContext (only if not Testing)
-if (!builder.Environment.IsEnvironment("Testing"))
-{
-    var connectionString = builder.Configuration.GetConnectionString("Postgres")
-                           ?? "Host=localhost;Port=5432;Database=techdoc;Username=techdoc;Password=techdoc";
-
-    builder.Services.AddDbContext<TechDocDbContext>(options =>
-        options.UseNpgsql(connectionString));
-}
-
-// MinIO Client & Document Storage
-var storageConfig = builder.Configuration.GetSection("ObjectStorage");
-var endpoint = storageConfig["Endpoint"] ?? "http://localhost:9000";
-var accessKey = storageConfig["AccessKey"] ?? "techdoc";
-var secretKey = storageConfig["SecretKey"] ?? "techdocdev";
-var bucketName = storageConfig["Bucket"] ?? "documents";
-
-var minioUri = new Uri(endpoint);
-builder.Services.AddSingleton<IMinioClient>(_ =>
-    new MinioClient()
-        .WithEndpoint(minioUri.Host, minioUri.Port)
-        .WithCredentials(accessKey, secretKey)
-        .WithSSL(minioUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
-        .Build());
-
-builder.Services.AddSingleton<IDocumentStorage>(sp =>
-    new MinIoDocumentStorage(sp.GetRequiredService<IMinioClient>(), bucketName));
-
-// Ingestion Pipeline Services & Background Worker
-builder.Services.AddSingleton<IIngestionJobQueue, ChannelIngestionJobQueue>();
-builder.Services.AddTransient<IDocumentExtractor, PdfPigExtractor>();
-builder.Services.AddTransient<IDocumentChunker, NaiveChunker>();
-builder.Services.AddTransient<IngestionPipelineProcessor>();
-
-builder.Services.AddHostedService<IngestionJobBackgroundWorker>();
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
@@ -75,8 +32,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
+
+// Map Minimal API Endpoints
+app.MapDocumentEndpoints();
+app.MapIngestionJobEndpoints();
 
 app.Run();
 

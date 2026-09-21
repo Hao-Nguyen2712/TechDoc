@@ -17,6 +17,21 @@ public static class PdfTestHelper
         return builder.Build();
     }
 
+    public static byte[] CreatePdfWithHeadings(string heading1, string text1, string heading2, string text2)
+    {
+        var builder = new PdfDocumentBuilder();
+        var page = builder.AddPage(PageSize.A4);
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+        page.AddText(heading1, 18, new PdfPoint(50, 750), font);
+        page.AddText(text1, 12, new PdfPoint(50, 700), font);
+
+        page.AddText(heading2, 18, new PdfPoint(50, 600), font);
+        page.AddText(text2, 12, new PdfPoint(50, 550), font);
+
+        return builder.Build();
+    }
+
     public static byte[] CreateEmptyPdf()
     {
         var builder = new PdfDocumentBuilder();
