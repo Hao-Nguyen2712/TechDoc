@@ -4,9 +4,9 @@
 
 **Blocked by:** 02 — Tracer bullet: upload a PDF and watch it become a Document with Chunks.
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Uploading content whose hash matches a successfully ingested Document returns that existing Document (`200`) — no new row, no new job
-- [ ] Uploading content whose hash matches a Document with a failed Ingestion Job enqueues a new Ingestion Job over the stored binary (`202`, same Document)
-- [ ] `GET /documents` lists Documents; `GET /documents/{id}` shows one with its Ingestion Job references
-- [ ] Tests cover both dedup branches through the HTTP API
+- [x] Uploading content whose hash matches a successfully ingested Document returns that existing Document (`200`) — no new row, no new job
+- [x] Uploading content whose hash matches a Document with a failed Ingestion Job enqueues a new Ingestion Job over the stored binary (`202`, same Document)
+- [x] `GET /documents` lists Documents; `GET /documents/{id}` shows one with its Ingestion Job references
+- [x] Tests cover both dedup branches through the HTTP API

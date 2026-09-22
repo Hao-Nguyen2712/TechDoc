@@ -1,3 +1,4 @@
+using TechDocAI.Core.DTOs;
 using TechDocAI.Core.Interfaces;
 
 namespace TechDocAI.Api.Endpoints;
@@ -33,9 +34,41 @@ public static class DocumentEndpoints
                 return Results.BadRequest(new { error = result.Error.Description });
             }
 
-            return Results.Accepted($"/ingestion-jobs/{result.Value.JobId}", result.Value);
-        })
-        .DisableAntiforgery();
+            if (result.Value.Outcome == UploadOutcome.AlreadyIngested)
+            {
+                return Results.Ok(result.Value.ExistingDocument);
+            }
+
+            return Results.Accepted($"/ingestion-jobs/{result.Value.JobId}", new
+            {
+                documentId = result.Value.DocumentId,
+                jobId = result.Value.JobId
+            });
+        });
+
+
+
+        app.MapGet("/documents", async (
+            IDocumentService documentService,
+            CancellationToken ct) =>
+        {
+            var result = await documentService.GetDocumentsAsync(ct);
+            return Results.Ok(result.Value);
+        });
+
+        app.MapGet("/documents/{id:guid}", async (
+            Guid id,
+            IDocumentService documentService,
+            CancellationToken ct) =>
+        {
+            var result = await documentService.GetDocumentByIdAsync(id, ct);
+            if (result.IsFailure)
+            {
+                return Results.NotFound(new { error = result.Error.Description });
+            }
+
+            return Results.Ok(result.Value);
+        });
 
         return app;
     }

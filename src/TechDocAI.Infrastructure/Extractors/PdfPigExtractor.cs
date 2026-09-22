@@ -65,7 +65,7 @@ public class PdfPigExtractor : ITransientDependency
             catch (Exception ex)
             {
                 return Result.Failure<ExtractionResult>(
-                    Error.Failure("Pdf.ExtractionFailed", ex.Message));
+                    Error.Failure("Pdf Extraction Failed", ex.Message));
             }
         }, ct);
     }

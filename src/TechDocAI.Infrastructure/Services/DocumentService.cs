@@ -74,6 +74,76 @@ public class DocumentService : IDocumentService, IScopedDependency
         var hashBytes = await SHA256.HashDataAsync(stream, ct);
         var contentHash = Convert.ToHexStringLower(hashBytes);
 
+        var existingDoc = await _dbContext.Documents
+            .Include(d => d.IngestionJobs)
+            .FirstOrDefaultAsync(d => d.ContentHash == contentHash, ct);
+
+        if (existingDoc != null)
+        {
+            // Case 1: Successfully ingested document -> idempotent 200 OK
+            if (existingDoc.IngestionJobs.Any(j => j.Status == IngestionStatus.Done))
+            {
+                var jobSummaries = existingDoc.IngestionJobs
+                    .OrderByDescending(j => j.CreatedAt)
+                    .Select(j => new IngestionJobSummaryResponse(
+                        j.Id,
+                        j.Status.ToString().ToLowerInvariant(),
+                        j.ErrorDetails,
+                        j.CreatedAt,
+                        j.UpdatedAt))
+                    .ToList();
+
+                var docDetails = new DocumentDetailsResponse(
+                    existingDoc.Id,
+                    existingDoc.FileName,
+                    existingDoc.ContentType,
+                    existingDoc.FileSizeBytes,
+                    existingDoc.ContentHash,
+                    existingDoc.NeedsOcr,
+                    existingDoc.CreatedAt,
+                    jobSummaries);
+
+                return Result.Success(new DocumentUploadResult(
+                    existingDoc.Id,
+                    null,
+                    UploadOutcome.AlreadyIngested,
+                    docDetails));
+            }
+
+            // Case 2: Document whose ingestion is currently active -> return 202 with existing active job
+            var activeJob = existingDoc.IngestionJobs
+                .FirstOrDefault(j => j.Status is IngestionStatus.Pending or IngestionStatus.Extracting or IngestionStatus.Chunking or IngestionStatus.Embedding);
+            if (activeJob != null)
+            {
+                return Result.Success(new DocumentUploadResult(
+                    existingDoc.Id,
+                    activeJob.Id,
+                    UploadOutcome.Enqueued));
+            }
+
+            // Case 3: Document whose previous ingestion failed -> recovery path (ADR 0009):
+            // Enqueue a fresh IngestionJob over the already-stored binary (202, same Document)
+            var recoveryJobId = Guid.NewGuid();
+            var recoveryJob = new IngestionJob
+            {
+                Id = recoveryJobId,
+                DocumentId = existingDoc.Id,
+                Status = IngestionStatus.Pending,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            _dbContext.IngestionJobs.Add(recoveryJob);
+            await _dbContext.SaveChangesAsync(ct);
+
+            await _queue.EnqueueAsync(recoveryJobId, ct);
+
+            return Result.Success(new DocumentUploadResult(
+                existingDoc.Id,
+                recoveryJobId,
+                UploadOutcome.Enqueued));
+        }
+
         var documentId = Guid.NewGuid();
         var jobId = Guid.NewGuid();
         var storageKey = $"documents/{documentId}/original{extension}";
@@ -134,5 +204,60 @@ public class DocumentService : IDocumentService, IScopedDependency
             job.UpdatedAt);
 
         return Result.Success(result);
+    }
+
+    public async Task<Result<IReadOnlyList<DocumentResponse>>> GetDocumentsAsync(CancellationToken ct = default)
+    {
+        var rawDocs = await _dbContext.Documents
+            .AsNoTracking()
+            .Select(d => new DocumentResponse(
+                d.Id,
+                d.FileName,
+                d.ContentType,
+                d.FileSizeBytes,
+                d.ContentHash,
+                d.NeedsOcr,
+                d.CreatedAt))
+            .ToListAsync(ct);
+
+        var documents = rawDocs.OrderByDescending(d => d.CreatedAt).ToList();
+
+        return Result.Success<IReadOnlyList<DocumentResponse>>(documents);
+    }
+
+    public async Task<Result<DocumentDetailsResponse>> GetDocumentByIdAsync(Guid documentId, CancellationToken ct = default)
+    {
+        var doc = await _dbContext.Documents
+            .AsNoTracking()
+            .Include(d => d.IngestionJobs)
+            .FirstOrDefaultAsync(d => d.Id == documentId, ct);
+
+        if (doc == null)
+        {
+            return Result.Failure<DocumentDetailsResponse>(
+                Error.NotFound("Document.NotFound", "Document not found."));
+        }
+
+        var jobSummaries = doc.IngestionJobs
+            .OrderByDescending(j => j.CreatedAt)
+            .Select(j => new IngestionJobSummaryResponse(
+                j.Id,
+                j.Status.ToString().ToLowerInvariant(),
+                j.ErrorDetails,
+                j.CreatedAt,
+                j.UpdatedAt))
+            .ToList();
+
+        var response = new DocumentDetailsResponse(
+            doc.Id,
+            doc.FileName,
+            doc.ContentType,
+            doc.FileSizeBytes,
+            doc.ContentHash,
+            doc.NeedsOcr,
+            doc.CreatedAt,
+            jobSummaries);
+
+        return Result.Success(response);
     }
 }

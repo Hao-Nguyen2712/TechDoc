@@ -15,4 +15,11 @@ public interface IDocumentService
     Task<Result<IngestionJobStatusResult>> GetJobStatusAsync(
         Guid jobId,
         CancellationToken ct = default);
+
+    Task<Result<IReadOnlyList<DocumentResponse>>> GetDocumentsAsync(
+        CancellationToken ct = default);
+
+    Task<Result<DocumentDetailsResponse>> GetDocumentByIdAsync(
+        Guid documentId,
+        CancellationToken ct = default);
 }
