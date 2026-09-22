@@ -13,61 +13,70 @@ public class PdfPigExtractor : ITransientDependency
 
     public async Task<Result<ExtractionResult>> ExtractAsync(Stream pdfStream, CancellationToken ct = default)
     {
-        return await Task.Run(() =>
+        try
         {
-            try
+            return await Task.Run(() =>
             {
-                ct.ThrowIfCancellationRequested();
-                pdfStream.Position = 0;
-                using var pdfDocument = PdfDocument.Open(pdfStream);
-
-                var pages = new List<ExtractedPage>();
-                var allLines = new List<ExtractedLine>();
-                var totalTextLength = 0;
-
-                foreach (var page in pdfDocument.GetPages())
+                try
                 {
                     ct.ThrowIfCancellationRequested();
-                    var pageLines = ExtractLinesFromPage(page);
+                    pdfStream.Position = 0;
+                    using var pdfDocument = PdfDocument.Open(pdfStream);
 
-                    var pageTextBuilder = new StringBuilder();
-                    foreach (var line in pageLines)
+                    var pages = new List<ExtractedPage>();
+                    var allLines = new List<ExtractedLine>();
+                    var totalTextLength = 0;
+
+                    foreach (var page in pdfDocument.GetPages())
                     {
-                        pageTextBuilder.AppendLine(line.Text);
-                        allLines.Add(line);
+                        ct.ThrowIfCancellationRequested();
+                        var pageLines = ExtractLinesFromPage(page);
+
+                        var pageTextBuilder = new StringBuilder();
+                        foreach (var line in pageLines)
+                        {
+                            pageTextBuilder.AppendLine(line.Text);
+                            allLines.Add(line);
+                        }
+
+                        var pageText = pageTextBuilder.ToString().Trim();
+                        if (string.IsNullOrWhiteSpace(pageText) && !string.IsNullOrWhiteSpace(page.Text))
+                        {
+                            pageText = page.Text.Trim();
+                        }
+
+                        var needsOcr = pageText.Length < MinimumPageTextThreshold;
+
+                        pages.Add(new ExtractedPage(
+                            PageNumber: page.Number,
+                            Text: pageText,
+                            Lines: pageLines,
+                            NeedsOcr: needsOcr
+                        ));
+
+                        totalTextLength += pageText.Length;
                     }
 
-                    var pageText = pageTextBuilder.ToString().Trim();
-                    if (string.IsNullOrWhiteSpace(pageText) && !string.IsNullOrWhiteSpace(page.Text))
-                    {
-                        pageText = page.Text.Trim();
-                    }
-
-                    var needsOcr = pageText.Length < MinimumPageTextThreshold;
-
-                    pages.Add(new ExtractedPage(
-                        PageNumber: page.Number,
-                        Text: pageText,
-                        Lines: pageLines,
-                        NeedsOcr: needsOcr
-                    ));
-
-                    totalTextLength += pageText.Length;
+                    var totalNeedsOcr = pages.Count == 0 || pages.Any(p => p.NeedsOcr);
+                    return Result.Success(new ExtractionResult(pages, allLines, totalNeedsOcr));
                 }
-
-                var totalNeedsOcr = totalTextLength < MinimumPageTextThreshold || pages.Count == 0;
-                return Result.Success(new ExtractionResult(pages, allLines, totalNeedsOcr));
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<ExtractionResult>(
-                    Error.Failure("Pdf Extraction Failed", ex.Message));
-            }
-        }, ct);
+                catch (OperationCanceledException)
+                {
+                    return Result.Failure<ExtractionResult>(
+                        Error.Failure("Pdf.ExtractionCanceled", "PDF extraction was canceled."));
+                }
+                catch (Exception ex)
+                {
+                    return Result.Failure<ExtractionResult>(
+                        Error.Failure("Pdf.ExtractionFailed", ex.Message));
+                }
+            }, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            return Result.Failure<ExtractionResult>(
+                Error.Failure("Pdf.ExtractionCanceled", "PDF extraction was canceled."));
+        }
     }
 
     private static List<ExtractedLine> ExtractLinesFromPage(Page page)

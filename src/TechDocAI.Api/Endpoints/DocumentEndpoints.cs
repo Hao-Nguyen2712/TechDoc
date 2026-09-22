@@ -44,7 +44,8 @@ public static class DocumentEndpoints
                 documentId = result.Value.DocumentId,
                 jobId = result.Value.JobId
             });
-        });
+        })
+        .DisableAntiforgery();
 
 
 

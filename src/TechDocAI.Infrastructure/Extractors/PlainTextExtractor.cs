@@ -37,6 +37,11 @@ public class PlainTextExtractor : ITransientDependency
                 Lines: lines,
                 TotalNeedsOcr: false));
         }
+        catch (OperationCanceledException)
+        {
+            return Result.Failure<ExtractionResult>(
+                Error.Failure("Txt.ExtractionCanceled", "Text extraction was canceled."));
+        }
         catch (Exception ex)
         {
             return Result.Failure<ExtractionResult>(

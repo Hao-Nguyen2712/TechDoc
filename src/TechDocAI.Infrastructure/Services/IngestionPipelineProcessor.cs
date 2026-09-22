@@ -52,7 +52,7 @@ public class IngestionPipelineProcessor : ITransientDependency
                 job.ErrorDetails = extractionResult.Error.Description;
                 job.UpdatedAt = DateTimeOffset.UtcNow;
                 job.Document.NeedsOcr = true;
-                await dbContext.SaveChangesAsync(ct);
+                await dbContext.SaveChangesAsync(CancellationToken.None);
                 return;
             }
 
@@ -64,7 +64,7 @@ public class IngestionPipelineProcessor : ITransientDependency
                 job.ErrorDetails = "Document contained no extractable text.";
                 job.UpdatedAt = DateTimeOffset.UtcNow;
                 job.Document.NeedsOcr = true;
-                await dbContext.SaveChangesAsync(ct);
+                await dbContext.SaveChangesAsync(CancellationToken.None);
                 return;
             }
 
@@ -158,7 +158,7 @@ public class IngestionPipelineProcessor : ITransientDependency
             job.Status = IngestionStatus.Failed;
             job.ErrorDetails = ex.Message;
             job.UpdatedAt = DateTimeOffset.UtcNow;
-            await dbContext.SaveChangesAsync(ct);
+            await dbContext.SaveChangesAsync(CancellationToken.None);
         }
     }
 }

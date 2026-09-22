@@ -142,4 +142,37 @@ public class StructureAwareChunkerTests
             Assert.Equal(chunks[i].EndLine + 1, chunks[i + 1].StartLine);
         }
     }
+
+    [Fact]
+    public void Chunk_AssignsPageLevelNeedsOcr_ToCorrespondingChunks()
+    {
+        // Page 1 is scanned (NeedsOcr = true)
+        // Page 2 is clean text (NeedsOcr = false)
+        var lines = new List<ExtractedLine>
+        {
+            new("Section 1", 18.0, PageNumber: 1),
+            new("Scanned page 1 content", 12.0, PageNumber: 1),
+            new("Section 2", 18.0, PageNumber: 2),
+            new("Clean page 2 content", 12.0, PageNumber: 2)
+        };
+
+        var extraction = new ExtractionResult(
+            Pages: new List<ExtractedPage>
+            {
+                new(1, "Section 1\nScanned page 1 content", lines.Take(2).ToList(), NeedsOcr: true),
+                new(2, "Section 2\nClean page 2 content", lines.Skip(2).ToList(), NeedsOcr: false)
+            },
+            Lines: lines,
+            TotalNeedsOcr: true);
+
+        var chunker = new StructureAwareChunker();
+        var chunks = chunker.Chunk(extraction);
+
+        Assert.Equal(2, chunks.Count);
+        Assert.Equal(1, chunks[0].PageIndex);
+        Assert.True(chunks[0].NeedsOcr);
+
+        Assert.Equal(2, chunks[1].PageIndex);
+        Assert.False(chunks[1].NeedsOcr);
+    }
 }

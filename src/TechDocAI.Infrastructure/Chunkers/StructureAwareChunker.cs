@@ -27,16 +27,20 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
             return Array.Empty<ChunkDraft>();
         }
 
+        var pageNeedsOcrMap = extraction.Pages?.ToDictionary(p => p.PageNumber, p => p.NeedsOcr)
+            ?? new Dictionary<int, bool>();
+
         var headingAnalysis = HeadingDetector.Analyze(lines);
 
         return headingAnalysis.HasHeadings
-            ? ChunkStructured(lines, headingAnalysis, extraction.TotalNeedsOcr)
-            : ChunkUnstructured(lines, extraction.TotalNeedsOcr);
+            ? ChunkStructured(lines, headingAnalysis, pageNeedsOcrMap, extraction.TotalNeedsOcr)
+            : ChunkUnstructured(lines, pageNeedsOcrMap, extraction.TotalNeedsOcr);
     }
 
     private static List<ChunkDraft> ChunkStructured(
         IReadOnlyList<ExtractedLine> lines,
         HeadingAnalysisResult headingAnalysis,
+        IReadOnlyDictionary<int, bool> pageNeedsOcrMap,
         bool defaultNeedsOcr)
     {
         var chunks = new List<ChunkDraft>();
@@ -45,6 +49,11 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
         var currentTokens = 0;
         string currentHeadingPath = string.Empty;
         int? currentPageIndex = null;
+
+        bool ResolveNeedsOcr(int? pageIndex) =>
+            (pageIndex.HasValue && pageNeedsOcrMap.TryGetValue(pageIndex.Value, out var needsOcr))
+                ? needsOcr
+                : defaultNeedsOcr;
 
         void FlushCurrentChunk()
         {
@@ -56,7 +65,7 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
                     EndLine: null,
                     HeadingPath: currentHeadingPath,
                     Text: currentChunkText.ToString().Trim(),
-                    NeedsOcr: defaultNeedsOcr
+                    NeedsOcr: ResolveNeedsOcr(currentPageIndex)
                 ));
                 currentChunkText.Clear();
                 currentTokens = 0;
@@ -98,7 +107,7 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
                         EndLine: null,
                         HeadingPath: currentHeadingPath,
                         Text: sub,
-                        NeedsOcr: defaultNeedsOcr
+                        NeedsOcr: ResolveNeedsOcr(line.PageNumber)
                     ));
                 }
                 continue;
@@ -128,6 +137,7 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
 
     private static List<ChunkDraft> ChunkUnstructured(
         IReadOnlyList<ExtractedLine> lines,
+        IReadOnlyDictionary<int, bool> pageNeedsOcrMap,
         bool defaultNeedsOcr)
     {
         var chunks = new List<ChunkDraft>();
@@ -137,6 +147,11 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
         int? currentPageIndex = null;
         int? currentStartLine = null;
         int? currentEndLine = null;
+
+        bool ResolveNeedsOcr(int? pageIndex) =>
+            (pageIndex.HasValue && pageNeedsOcrMap.TryGetValue(pageIndex.Value, out var needsOcr))
+                ? needsOcr
+                : defaultNeedsOcr;
 
         void FlushCurrentChunk()
         {
@@ -148,7 +163,7 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
                     EndLine: currentEndLine,
                     HeadingPath: string.Empty,
                     Text: currentChunkText.ToString().Trim(),
-                    NeedsOcr: defaultNeedsOcr
+                    NeedsOcr: ResolveNeedsOcr(currentPageIndex)
                 ));
                 currentChunkText.Clear();
                 currentTokens = 0;
@@ -180,7 +195,7 @@ public class StructureAwareChunker : IDocumentChunker, ITransientDependency
                         EndLine: line.LineNumber,
                         HeadingPath: string.Empty,
                         Text: sub,
-                        NeedsOcr: defaultNeedsOcr
+                        NeedsOcr: ResolveNeedsOcr(line.PageNumber)
                     ));
                 }
                 continue;

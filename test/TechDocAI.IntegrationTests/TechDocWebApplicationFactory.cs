@@ -47,7 +47,7 @@ public class TechDocWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            _connection = new SqliteConnection("Data Source=:memory:");
+            _connection = new SqliteConnection("Data Source=:memory:;Default Timeout=5;");
             _connection.Open();
 
             services.AddDbContext<TechDocDbContext>(options =>
