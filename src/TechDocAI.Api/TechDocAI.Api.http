@@ -1,0 +1,6 @@
+@TechDocAI_Api_HostAddress = http://localhost:5032
+
+GET {{TechDocAI_Api_HostAddress}}/openapi/v1.json
+Accept: application/json
+
+###
