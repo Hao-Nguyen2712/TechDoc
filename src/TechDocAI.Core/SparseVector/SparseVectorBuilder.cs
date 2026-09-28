@@ -1,4 +1,4 @@
-namespace TechDocAI.Infrastructure.VectorStore;
+namespace TechDocAI.Core.SparseVector;
 
 public static class SparseVectorBuilder
 {

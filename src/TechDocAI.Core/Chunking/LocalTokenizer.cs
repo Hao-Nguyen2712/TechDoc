@@ -1,4 +1,4 @@
-namespace TechDocAI.Infrastructure.Chunkers;
+namespace TechDocAI.Core.Chunking;
 
 public static class LocalTokenizer
 {

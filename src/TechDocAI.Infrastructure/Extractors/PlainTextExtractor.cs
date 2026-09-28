@@ -1,8 +1,7 @@
 using System.Text;
-using TechDocAI.Core.Common;
-using TechDocAI.Application.Abstractions;
-using TechDocAI.Core.Extraction;
 using TechDocAI.Application.Common;
+using TechDocAI.Core.Common;
+using TechDocAI.Core.Extraction;
 
 namespace TechDocAI.Infrastructure.Extractors;
 

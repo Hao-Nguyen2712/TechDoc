@@ -1,6 +1,6 @@
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Core.Extraction;
-using TechDocAI.Infrastructure.Chunkers;
+using TechDocAI.Core.Chunking;
 using Xunit;
 
 namespace TechDocAI.UnitTests;

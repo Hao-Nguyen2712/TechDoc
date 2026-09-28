@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 using Minio;
 using Qdrant.Client;
 using System.Reflection;
-using TechDocAI.Core.Common;
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Common;
 using TechDocAI.Infrastructure.Persistence;

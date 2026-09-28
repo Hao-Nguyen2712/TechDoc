@@ -1,7 +1,6 @@
-using TechDocAI.Application.Abstractions;
 using TechDocAI.Core.Extraction;
 
-namespace TechDocAI.Infrastructure.Chunkers;
+namespace TechDocAI.Core.Chunking;
 
 public record HeadingAnalysisResult(
     bool HasHeadings,

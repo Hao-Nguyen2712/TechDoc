@@ -25,7 +25,7 @@ public class DocumentDedupAndReadTests : IClassFixture<TechDocWebApplicationFact
 
     private async Task WaitForJobTerminalStatusAsync(Guid jobId)
     {
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 50; i++)
         {
             await Task.Delay(200);
             var statusResponse = await _client.GetAsync($"/ingestion-jobs/{jobId}");

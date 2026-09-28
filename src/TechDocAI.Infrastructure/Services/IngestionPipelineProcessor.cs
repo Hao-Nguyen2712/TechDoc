@@ -7,7 +7,7 @@ using TechDocAI.Core.Extraction;
 using TechDocAI.Core.Chunking;
 using TechDocAI.Application.Common;
 using TechDocAI.Infrastructure.Persistence;
-using TechDocAI.Infrastructure.VectorStore;
+using TechDocAI.Core.SparseVector;
 
 namespace TechDocAI.Infrastructure.Services;
 

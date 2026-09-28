@@ -1,4 +1,4 @@
-using TechDocAI.Infrastructure.VectorStore;
+using TechDocAI.Core.SparseVector;
 using Xunit;
 
 namespace TechDocAI.UnitTests;

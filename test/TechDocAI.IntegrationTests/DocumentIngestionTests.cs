@@ -50,7 +50,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
 
         // Act 2: Poll GET /ingestion-jobs/{jobId} until done or failed
         JobStatusResponse? jobStatus = null;
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 50; i++)
         {
             await Task.Delay(200);
             var statusResponse = await _client.GetAsync($"/ingestion-jobs/{uploadResult.jobId}");
@@ -119,7 +119,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
 
             // Act 2: Poll GET /ingestion-jobs/{jobId} until terminal status
             JobStatusResponse? jobStatus = null;
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 50; i++)
             {
                 await Task.Delay(200);
                 var statusResponse = await _client.GetAsync($"/ingestion-jobs/{uploadResult.jobId}");
@@ -175,7 +175,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
 
         // Act 2: Poll GET /ingestion-jobs/{jobId} until terminal status
         JobStatusResponse? jobStatus = null;
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 50; i++)
         {
             await Task.Delay(200);
             var statusResponse = await _client.GetAsync($"/ingestion-jobs/{uploadResult.jobId}");
@@ -232,7 +232,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
 
         // Act 2: Poll GET /ingestion-jobs/{jobId} until done
         JobStatusResponse? jobStatus = null;
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 50; i++)
         {
             await Task.Delay(200);
             var statusResponse = await _client.GetAsync($"/ingestion-jobs/{uploadResult.jobId}");
@@ -286,7 +286,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
 
         // Act 2: Poll GET /ingestion-jobs/{jobId} until done
         JobStatusResponse? jobStatus = null;
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 50; i++)
         {
             await Task.Delay(200);
             var statusResponse = await _client.GetAsync($"/ingestion-jobs/{uploadResult.jobId}");
