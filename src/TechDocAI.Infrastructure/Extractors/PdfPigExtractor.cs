@@ -1,4 +1,5 @@
 using System.Text;
+using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Common;
 using TechDocAI.Core.Common;
 using TechDocAI.Core.Extraction;
@@ -7,7 +8,7 @@ using UglyToad.PdfPig.Content;
 
 namespace TechDocAI.Infrastructure.Extractors;
 
-public class PdfPigExtractor : ITransientDependency
+public class PdfPigExtractor : IPdfExtractor, ITransientDependency
 {
     private const int MinimumPageTextThreshold = 50;
     private const double LineTolerance = 3.0;

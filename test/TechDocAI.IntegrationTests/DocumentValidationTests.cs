@@ -10,7 +10,7 @@ public class DocumentValidationTests : IClassFixture<TechDocWebApplicationFactor
 
     public DocumentValidationTests(TechDocWebApplicationFactory factory)
     {
-        _client = factory.CreateClient();
+        _client = factory.CreateDefaultClient(new SqliteBusyRetryHandler());
     }
 
     [Fact]

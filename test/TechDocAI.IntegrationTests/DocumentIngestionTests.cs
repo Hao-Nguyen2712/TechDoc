@@ -16,7 +16,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
     public DocumentIngestionTests(TechDocWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateDefaultClient(new SqliteBusyRetryHandler());
     }
 
     private record UploadResponse(Guid documentId, Guid jobId);

@@ -1,13 +1,9 @@
 using System.Text;
-using TechDocAI.Core.Common;
-using TechDocAI.Application.Abstractions;
 using TechDocAI.Core.Extraction;
-using TechDocAI.Core.Chunking;
-using TechDocAI.Application.Common;
 
-namespace TechDocAI.Infrastructure.Chunkers;
+namespace TechDocAI.Core.Chunking;
 
-public class StructureAwareChunker : IDocumentChunker, ITransientDependency
+public class StructureAwareChunker
 {
     private const int MaxTokensPerChunk = 900;
 

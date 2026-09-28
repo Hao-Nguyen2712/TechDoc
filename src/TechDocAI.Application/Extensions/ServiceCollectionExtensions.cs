@@ -1,8 +1,9 @@
-using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Common;
+using TechDocAI.Core.Chunking;
 
 namespace TechDocAI.Application.Extensions;
 
@@ -13,6 +14,9 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.AddConventionDependencies(typeof(IScopedDependency).Assembly);
+
+        // Domain logic in Core carries no DI markers; the consuming layer registers it.
+        services.AddTransient<StructureAwareChunker>();
 
         services.AddSingleton(sp =>
         {

@@ -1,43 +1,54 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Application.Common;
+using TechDocAI.Core.Chunking;
 using TechDocAI.Core.Common;
 using TechDocAI.Core.Entities;
-using TechDocAI.Application.Abstractions;
 using TechDocAI.Core.Extraction;
-using TechDocAI.Core.Chunking;
-using TechDocAI.Application.Common;
-using TechDocAI.Infrastructure.Persistence;
 using TechDocAI.Core.SparseVector;
 
-namespace TechDocAI.Infrastructure.Services;
+namespace TechDocAI.Application.UseCases.Ingestion.ProcessIngestionJob;
 
-public class IngestionPipelineProcessor : ITransientDependency
+public class ProcessIngestionJobHandler : ITransientDependency
 {
+    private readonly IIngestionJobRepository _jobRepository;
+    private readonly IChunkRepository _chunkRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IDocumentStorage _storage;
-    private readonly IDocumentExtractor _extractor;
-    private readonly IDocumentChunker _chunker;
+    private readonly IPdfExtractor _pdfExtractor;
+    private readonly IPlainTextExtractor _plainTextExtractor;
+    private readonly StructureAwareChunker _chunker;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
     private readonly IVectorStore _vectorStore;
+    private readonly EmbeddingSettings _embeddingSettings;
 
-    public IngestionPipelineProcessor(
+    public ProcessIngestionJobHandler(
+        IIngestionJobRepository jobRepository,
+        IChunkRepository chunkRepository,
+        IUnitOfWork unitOfWork,
         IDocumentStorage storage,
-        IDocumentExtractor extractor,
-        IDocumentChunker chunker,
+        IPdfExtractor pdfExtractor,
+        IPlainTextExtractor plainTextExtractor,
+        StructureAwareChunker chunker,
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-        IVectorStore vectorStore)
+        IVectorStore vectorStore,
+        EmbeddingSettings embeddingSettings)
     {
+        _jobRepository = jobRepository;
+        _chunkRepository = chunkRepository;
+        _unitOfWork = unitOfWork;
         _storage = storage;
-        _extractor = extractor;
+        _pdfExtractor = pdfExtractor;
+        _plainTextExtractor = plainTextExtractor;
         _chunker = chunker;
         _embeddingGenerator = embeddingGenerator;
         _vectorStore = vectorStore;
+        _embeddingSettings = embeddingSettings;
     }
 
-    public async Task ProcessJobAsync(TechDocDbContext dbContext, Guid jobId, CancellationToken ct = default)
+    public async Task HandleAsync(ProcessIngestionJobCommand command, CancellationToken ct = default)
     {
-        var job = await dbContext.IngestionJobs
-            .Include(j => j.Document)
-            .FirstOrDefaultAsync(j => j.Id == jobId, ct);
+        var job = await _jobRepository.FindByIdWithDocumentAsync(command.JobId, ct);
 
         if (job == null || job.Document == null)
         {
@@ -47,7 +58,12 @@ public class IngestionPipelineProcessor : ITransientDependency
         try
         {
             await using var pdfStream = await _storage.OpenReadAsync(job.Document.StorageKey, ct);
-            var extractionResult = await _extractor.ExtractAsync(pdfStream, job.Document.ContentType, ct);
+            var extractionResult = job.Document.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase)
+                ? await _pdfExtractor.ExtractAsync(pdfStream, ct)
+                : job.Document.ContentType.Equals("text/plain", StringComparison.OrdinalIgnoreCase)
+                    ? await _plainTextExtractor.ExtractAsync(pdfStream, ct)
+                    : Result.Failure<ExtractionResult>(
+                        Error.Validation("Extraction.UnsupportedType", $"Unsupported content type: {job.Document.ContentType}"));
 
             if (extractionResult.IsFailure)
             {
@@ -55,7 +71,7 @@ public class IngestionPipelineProcessor : ITransientDependency
                 job.ErrorDetails = extractionResult.Error.Description;
                 job.UpdatedAt = DateTimeOffset.UtcNow;
                 job.Document.NeedsOcr = true;
-                await dbContext.SaveChangesAsync(CancellationToken.None);
+                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
                 return;
             }
 
@@ -67,7 +83,7 @@ public class IngestionPipelineProcessor : ITransientDependency
                 job.ErrorDetails = "Document contained no extractable text.";
                 job.UpdatedAt = DateTimeOffset.UtcNow;
                 job.Document.NeedsOcr = true;
-                await dbContext.SaveChangesAsync(CancellationToken.None);
+                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
                 return;
             }
 
@@ -75,8 +91,8 @@ public class IngestionPipelineProcessor : ITransientDependency
             var chunkTexts = chunkDrafts.Select(c => c.Text).ToList();
             var embeddingOptions = new EmbeddingGenerationOptions
             {
-                ModelId = "gemini-embedding-001",
-                Dimensions = 1536
+                ModelId = _embeddingSettings.ModelId,
+                Dimensions = _embeddingSettings.Dimensions
             };
 
             var embeddings = await _embeddingGenerator.GenerateAsync(chunkTexts, embeddingOptions, ct);
@@ -110,7 +126,7 @@ public class IngestionPipelineProcessor : ITransientDependency
                     EndLine: draft.EndLine,
                     HeadingPath: draft.HeadingPath,
                     Text: draft.Text,
-                    EmbeddingModel: "gemini-embedding-001",
+                    EmbeddingModel: _embeddingSettings.ModelId,
                     DenseVector: denseVec,
                     SparseIndices: sparseIndices,
                     SparseValues: sparseValues
@@ -126,8 +142,8 @@ public class IngestionPipelineProcessor : ITransientDependency
                     HeadingPath = draft.HeadingPath,
                     Text = draft.Text,
                     NeedsOcr = draft.NeedsOcr,
-                    EmbeddingModel = "gemini-embedding-001",
-                    EmbeddingDimensions = 1536
+                    EmbeddingModel = _embeddingSettings.ModelId,
+                    EmbeddingDimensions = _embeddingSettings.Dimensions
                 });
             }
 
@@ -135,16 +151,13 @@ public class IngestionPipelineProcessor : ITransientDependency
             await _vectorStore.UpsertChunksAsync(vectorRecords, ct);
 
             // 4. Commit to PostgreSQL in single transaction
-            foreach (var chunk in chunksToPersist)
-            {
-                dbContext.Chunks.Add(chunk);
-            }
+            _chunkRepository.AddRange(chunksToPersist);
 
             job.Document.NeedsOcr = extraction.TotalNeedsOcr;
             job.Status = IngestionStatus.Done;
             job.UpdatedAt = DateTimeOffset.UtcNow;
 
-            await dbContext.SaveChangesAsync(ct);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
         catch (Exception ex)
         {
@@ -161,7 +174,7 @@ public class IngestionPipelineProcessor : ITransientDependency
             job.Status = IngestionStatus.Failed;
             job.ErrorDetails = ex.Message;
             job.UpdatedAt = DateTimeOffset.UtcNow;
-            await dbContext.SaveChangesAsync(CancellationToken.None);
+            await _unitOfWork.SaveChangesAsync(CancellationToken.None);
         }
     }
 }

@@ -2,8 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TechDocAI.Application.Abstractions;
-using TechDocAI.Infrastructure.Persistence;
-using TechDocAI.Infrastructure.Services;
+using TechDocAI.Application.UseCases.Ingestion.ProcessIngestionJob;
 
 namespace TechDocAI.Infrastructure.Workers;
 
@@ -34,10 +33,9 @@ public class IngestionJobBackgroundWorker : BackgroundService
                 var jobId = await _queue.DequeueAsync(stoppingToken);
 
                 using var scope = _serviceProvider.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<TechDocDbContext>();
-                var processor = scope.ServiceProvider.GetRequiredService<IngestionPipelineProcessor>();
+                var handler = scope.ServiceProvider.GetRequiredService<ProcessIngestionJobHandler>();
 
-                await processor.ProcessJobAsync(dbContext, jobId, stoppingToken);
+                await handler.HandleAsync(new ProcessIngestionJobCommand(jobId), stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

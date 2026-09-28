@@ -17,7 +17,7 @@ public class DocumentDedupAndReadTests : IClassFixture<TechDocWebApplicationFact
     public DocumentDedupAndReadTests(TechDocWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateDefaultClient(new SqliteBusyRetryHandler());
     }
 
     private record UploadResponse(Guid documentId, Guid jobId);

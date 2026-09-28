@@ -1,4 +1,3 @@
-using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.UseCases.Documents.GetDocument;
 using TechDocAI.Application.UseCases.Documents.ListDocuments;
 using TechDocAI.Application.UseCases.Documents.UploadDocument;

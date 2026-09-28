@@ -33,9 +33,42 @@ public class InMemoryDocumentStorage : IDocumentStorage
     }
 }
 
+public class SqliteBusyRetryHandler : DelegatingHandler
+{
+    // The factory shares one in-memory SQLite connection between the hosted worker's
+    // write transactions and request scopes; SQLITE_BUSY can surface as an in-process
+    // exception on any request. Retrying is safe: uploads are idempotent (ADR 0009),
+    // reads are side-effect free, and a busy hit means nothing committed yet.
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await base.SendAsync(request, cancellationToken);
+            }
+            catch (Exception ex) when (IsTransient(ex) && attempt < 30)
+            {
+                await Task.Delay(100, cancellationToken);
+            }
+        }
+    }
+
+    private static bool IsTransient(Exception ex) =>
+        ex is SqliteException
+        || (ex is InvalidOperationException && ex.Message.Contains("SQLite", StringComparison.OrdinalIgnoreCase));
+}
+
 public class TechDocWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private DbConnection? _connection;
+    // Anchor connection keeping the shared in-memory database alive. Each EF context
+    // opens its OWN connection to the same named in-memory database: sharing one
+    // SqliteConnection object across concurrently-used contexts (worker + requests)
+    // fails with SQLITE_BUSY during connection initialization.
+    private DbConnection? _anchorConnection;
+    private string? _dataSource;
 
     public InMemoryDocumentStorage DocumentStorage { get; } = new();
     public InMemoryVectorStore VectorStore { get; } = new();
@@ -47,12 +80,13 @@ public class TechDocWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            _connection = new SqliteConnection("Data Source=:memory:;Default Timeout=5;");
-            _connection.Open();
+            _dataSource = $"file:{Guid.NewGuid():N}?mode=memory&cache=shared";
+            _anchorConnection = new SqliteConnection($"Data Source={_dataSource};Default Timeout=5;");
+            _anchorConnection.Open();
 
             services.AddDbContext<TechDocDbContext>(options =>
             {
-                options.UseSqlite(_connection);
+                options.UseSqlite($"Data Source={_dataSource};Default Timeout=5;");
             });
 
             // Replace IDocumentStorage with InMemoryDocumentStorage
@@ -90,6 +124,6 @@ public class TechDocWebApplicationFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        _connection?.Dispose();
+        _anchorConnection?.Dispose();
     }
 }
