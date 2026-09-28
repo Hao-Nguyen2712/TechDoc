@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.UseCases.Ingestion.ProcessIngestionJob;
 
-namespace TechDocAI.Infrastructure.Workers;
+namespace TechDocAI.Api.Workers;
 
 public class IngestionJobBackgroundWorker : BackgroundService
 {

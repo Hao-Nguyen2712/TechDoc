@@ -8,7 +8,6 @@ using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Extensions;
 using TechDocAI.Infrastructure.Persistence;
 using TechDocAI.Infrastructure.Storage;
-using TechDocAI.Infrastructure.Workers;
 
 namespace TechDocAI.Infrastructure.Extensions;
 
@@ -52,9 +51,6 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IDocumentStorage>(sp =>
             new MinIoDocumentStorage(sp.GetRequiredService<IMinioClient>(), bucketName));
-
-        // 3. Hosted Service
-        services.AddHostedService<IngestionJobBackgroundWorker>();
 
         // 4. Auto-register convention dependencies from the Infrastructure assembly
         services.AddConventionDependencies(typeof(TechDocDbContext).Assembly);
