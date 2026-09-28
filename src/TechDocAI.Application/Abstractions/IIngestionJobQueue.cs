@@ -1,4 +1,4 @@
-namespace TechDocAI.Core.Interfaces;
+namespace TechDocAI.Application.Abstractions;
 
 public interface IIngestionJobQueue
 {

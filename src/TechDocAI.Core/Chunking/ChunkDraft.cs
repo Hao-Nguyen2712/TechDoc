@@ -1,4 +1,4 @@
-namespace TechDocAI.Core.Interfaces;
+namespace TechDocAI.Core.Chunking;
 
 public record ChunkDraft(
     int? PageIndex,
@@ -7,8 +7,3 @@ public record ChunkDraft(
     string HeadingPath,
     string Text,
     bool NeedsOcr);
-
-public interface IDocumentChunker
-{
-    IReadOnlyList<ChunkDraft> Chunk(ExtractionResult extraction);
-}

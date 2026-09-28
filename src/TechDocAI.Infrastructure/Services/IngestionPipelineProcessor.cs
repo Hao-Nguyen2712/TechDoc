@@ -2,7 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using TechDocAI.Core.Common;
 using TechDocAI.Core.Entities;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Core.Extraction;
+using TechDocAI.Core.Chunking;
+using TechDocAI.Application.Common;
 using TechDocAI.Infrastructure.Persistence;
 using TechDocAI.Infrastructure.VectorStore;
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
 using TechDocAI.Infrastructure.Persistence;
 using TechDocAI.Infrastructure.Services;
 

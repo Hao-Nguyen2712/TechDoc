@@ -1,6 +1,8 @@
 using System.Text;
 using TechDocAI.Core.Common;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Core.Extraction;
+using TechDocAI.Application.Common;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 

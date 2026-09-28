@@ -1,4 +1,4 @@
-namespace TechDocAI.Core.Common;
+namespace TechDocAI.Application.Common;
 
 /// <summary>
 /// Marker interface for services that should be registered with Scoped lifetime.

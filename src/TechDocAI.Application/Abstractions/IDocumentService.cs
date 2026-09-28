@@ -1,7 +1,7 @@
+using TechDocAI.Application.Dtos;
 using TechDocAI.Core.Common;
-using TechDocAI.Core.DTOs;
 
-namespace TechDocAI.Core.Interfaces;
+namespace TechDocAI.Application.Abstractions;
 
 public interface IDocumentService
 {

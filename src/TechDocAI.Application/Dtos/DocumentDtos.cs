@@ -1,4 +1,4 @@
-namespace TechDocAI.Core.DTOs;
+namespace TechDocAI.Application.Dtos;
 
 public enum UploadOutcome
 {

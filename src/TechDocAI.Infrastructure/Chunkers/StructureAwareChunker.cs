@@ -1,6 +1,9 @@
 using System.Text;
 using TechDocAI.Core.Common;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Core.Extraction;
+using TechDocAI.Core.Chunking;
+using TechDocAI.Application.Common;
 
 namespace TechDocAI.Infrastructure.Chunkers;
 

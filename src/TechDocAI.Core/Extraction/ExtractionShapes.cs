@@ -1,6 +1,4 @@
-using TechDocAI.Core.Common;
-
-namespace TechDocAI.Core.Interfaces;
+namespace TechDocAI.Core.Extraction;
 
 public record ExtractedLine(
     string Text,
@@ -18,8 +16,3 @@ public record ExtractionResult(
     IReadOnlyList<ExtractedPage> Pages,
     IReadOnlyList<ExtractedLine> Lines,
     bool TotalNeedsOcr);
-
-public interface IDocumentExtractor
-{
-    Task<Result<ExtractionResult>> ExtractAsync(Stream stream, string contentType, CancellationToken ct = default);
-}

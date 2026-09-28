@@ -1,5 +1,5 @@
-using TechDocAI.Core.DTOs;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Application.Dtos;
 
 namespace TechDocAI.Api.Endpoints;
 

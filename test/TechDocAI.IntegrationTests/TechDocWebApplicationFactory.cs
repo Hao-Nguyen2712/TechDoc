@@ -6,7 +6,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Data.Common;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
 using TechDocAI.Infrastructure.Persistence;
 
 namespace TechDocAI.IntegrationTests;

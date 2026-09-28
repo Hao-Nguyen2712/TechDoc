@@ -1,6 +1,6 @@
 using Minio;
 using Minio.DataModel.Args;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
 
 namespace TechDocAI.Infrastructure.Storage;
 

@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
 
 namespace TechDocAI.IntegrationTests;
 

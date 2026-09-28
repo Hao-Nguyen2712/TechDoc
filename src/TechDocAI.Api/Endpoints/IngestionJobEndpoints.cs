@@ -1,4 +1,4 @@
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
 
 namespace TechDocAI.Api.Endpoints;
 

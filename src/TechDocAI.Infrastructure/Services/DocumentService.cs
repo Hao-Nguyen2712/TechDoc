@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Application.Common;
+using TechDocAI.Application.Dtos;
 using TechDocAI.Core.Common;
-using TechDocAI.Core.DTOs;
 using TechDocAI.Core.Entities;
-using TechDocAI.Core.Interfaces;
 using TechDocAI.Infrastructure.Persistence;
 
 namespace TechDocAI.Infrastructure.Services;

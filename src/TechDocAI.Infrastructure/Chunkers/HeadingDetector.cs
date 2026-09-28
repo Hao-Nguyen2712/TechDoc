@@ -1,4 +1,5 @@
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Core.Extraction;
 
 namespace TechDocAI.Infrastructure.Chunkers;
 
