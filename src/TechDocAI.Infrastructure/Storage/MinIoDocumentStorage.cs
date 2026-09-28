@@ -15,7 +15,7 @@ public class MinIoDocumentStorage : IDocumentStorage
         _bucketName = bucketName;
     }
 
-    public async Task SaveAsync(Guid documentId, Stream fileStream, string contentType, CancellationToken ct = default)
+    public async Task SaveAsync(string storageKey, Stream fileStream, string contentType, CancellationToken ct = default)
     {
         var bucketExists = await _minioClient.BucketExistsAsync(new BucketExistsArgs().WithBucket(_bucketName), ct);
         if (!bucketExists)
@@ -23,25 +23,23 @@ public class MinIoDocumentStorage : IDocumentStorage
             await _minioClient.MakeBucketAsync(new MakeBucketArgs().WithBucket(_bucketName), ct);
         }
 
-        var objectName = $"documents/{documentId}/original.pdf";
         fileStream.Position = 0;
 
         await _minioClient.PutObjectAsync(new PutObjectArgs()
             .WithBucket(_bucketName)
-            .WithObject(objectName)
+            .WithObject(storageKey)
             .WithStreamData(fileStream)
             .WithObjectSize(fileStream.Length)
             .WithContentType(contentType), ct);
     }
 
-    public async Task<Stream> OpenReadAsync(Guid documentId, CancellationToken ct = default)
+    public async Task<Stream> OpenReadAsync(string storageKey, CancellationToken ct = default)
     {
-        var objectName = $"documents/{documentId}/original.pdf";
         var memoryStream = new MemoryStream();
 
         await _minioClient.GetObjectAsync(new GetObjectArgs()
             .WithBucket(_bucketName)
-            .WithObject(objectName)
+            .WithObject(storageKey)
             .WithCallbackStream(stream => stream.CopyTo(memoryStream)), ct);
 
         memoryStream.Position = 0;

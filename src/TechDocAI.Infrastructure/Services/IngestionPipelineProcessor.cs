@@ -46,7 +46,7 @@ public class IngestionPipelineProcessor : ITransientDependency
 
         try
         {
-            await using var pdfStream = await _storage.OpenReadAsync(job.DocumentId, ct);
+            await using var pdfStream = await _storage.OpenReadAsync(job.Document.StorageKey, ct);
             var extractionResult = await _extractor.ExtractAsync(pdfStream, job.Document.ContentType, ct);
 
             if (extractionResult.IsFailure)

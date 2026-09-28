@@ -46,7 +46,7 @@ public class DocumentIngestionTests : IClassFixture<TechDocWebApplicationFactory
         Assert.NotEqual(Guid.Empty, uploadResult.jobId);
 
         // Verify storage received the file
-        Assert.True(InMemoryDocumentStorage.Files.ContainsKey(uploadResult.documentId));
+        Assert.True(InMemoryDocumentStorage.Files.ContainsKey($"documents/{uploadResult.documentId}/original.pdf"));
 
         // Act 2: Poll GET /ingestion-jobs/{jobId} until done or failed
         JobStatusResponse? jobStatus = null;

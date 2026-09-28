@@ -150,7 +150,7 @@ public class DocumentService : IDocumentService, IScopedDependency
         var storageKey = $"documents/{documentId}/original{extension}";
 
         stream.Position = 0;
-        await _storage.SaveAsync(documentId, stream, effectiveContentType, ct);
+        await _storage.SaveAsync(storageKey, stream, effectiveContentType, ct);
 
         var document = new Document
         {

@@ -13,23 +13,23 @@ namespace TechDocAI.IntegrationTests;
 
 public class InMemoryDocumentStorage : IDocumentStorage
 {
-    public static ConcurrentDictionary<Guid, byte[]> Files { get; } = new();
+    public static ConcurrentDictionary<string, byte[]> Files { get; } = new();
 
-    public async Task SaveAsync(Guid documentId, Stream fileStream, string contentType, CancellationToken ct = default)
+    public async Task SaveAsync(string storageKey, Stream fileStream, string contentType, CancellationToken ct = default)
     {
         using var ms = new MemoryStream();
         await fileStream.CopyToAsync(ms, ct);
-        Files[documentId] = ms.ToArray();
+        Files[storageKey] = ms.ToArray();
     }
 
-    public Task<Stream> OpenReadAsync(Guid documentId, CancellationToken ct = default)
+    public Task<Stream> OpenReadAsync(string storageKey, CancellationToken ct = default)
     {
-        if (Files.TryGetValue(documentId, out var bytes))
+        if (Files.TryGetValue(storageKey, out var bytes))
         {
             return Task.FromResult<Stream>(new MemoryStream(bytes));
         }
 
-        throw new FileNotFoundException($"Document {documentId} not found in storage.");
+        throw new FileNotFoundException($"Document {storageKey} not found in storage.");
     }
 }
 
