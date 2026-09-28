@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TechDocAI.Core\TechDocAI.Core.csproj" />
+    <ProjectReference Include="..\TechDocAI.Application\TechDocAI.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
