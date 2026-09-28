@@ -1,54 +1,54 @@
-using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Common;
-using TechDocAI.Application.Dtos;
 using TechDocAI.Application.UseCases.Documents;
 using TechDocAI.Core.Common;
 using TechDocAI.Core.Entities;
-using TechDocAI.Infrastructure.Persistence;
 
-namespace TechDocAI.Infrastructure.Services;
+namespace TechDocAI.Application.UseCases.Documents.UploadDocument;
 
-public class DocumentService : IDocumentService, IScopedDependency
+public class UploadDocumentHandler : ITransientDependency
 {
     private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB
     private static readonly byte[] PdfMagicBytes = "%PDF-"u8.ToArray();
 
+    private readonly IDocumentRepository _documentRepository;
+    private readonly IIngestionJobRepository _jobRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IDocumentStorage _storage;
     private readonly IIngestionJobQueue _queue;
-    private readonly TechDocDbContext _dbContext;
 
-    public DocumentService(
+    public UploadDocumentHandler(
+        IDocumentRepository documentRepository,
+        IIngestionJobRepository jobRepository,
+        IUnitOfWork unitOfWork,
         IDocumentStorage storage,
-        IIngestionJobQueue queue,
-        TechDocDbContext dbContext)
+        IIngestionJobQueue queue)
     {
+        _documentRepository = documentRepository;
+        _jobRepository = jobRepository;
+        _unitOfWork = unitOfWork;
         _storage = storage;
         _queue = queue;
-        _dbContext = dbContext;
     }
 
-    public async Task<Result<DocumentUploadResult>> UploadAsync(
-        Stream stream,
-        string fileName,
-        string contentType,
-        long fileLength,
+    public async Task<Result<DocumentUploadResult>> HandleAsync(
+        UploadDocumentCommand command,
         CancellationToken ct = default)
     {
-        if (stream == null || fileLength <= 0)
+        if (command.Stream == null || command.FileLength <= 0)
         {
             return Result.Failure<DocumentUploadResult>(
                 Error.Validation("File.Required", "File is required."));
         }
 
-        if (fileLength > MaxFileSizeBytes)
+        if (command.FileLength > MaxFileSizeBytes)
         {
             return Result.Failure<DocumentUploadResult>(
                 Error.Validation("File.TooLarge", "File size exceeds maximum allowed limit of 50MB."));
         }
 
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        var extension = Path.GetExtension(command.FileName).ToLowerInvariant();
         if (extension != ".pdf" && extension != ".txt")
         {
             return Result.Failure<DocumentUploadResult>(
@@ -58,9 +58,9 @@ public class DocumentService : IDocumentService, IScopedDependency
         string effectiveContentType;
         if (extension == ".pdf")
         {
-            effectiveContentType = string.IsNullOrWhiteSpace(contentType) ? "application/pdf" : contentType;
+            effectiveContentType = string.IsNullOrWhiteSpace(command.ContentType) ? "application/pdf" : command.ContentType;
             var buffer = new byte[PdfMagicBytes.Length];
-            var bytesRead = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct);
+            var bytesRead = await command.Stream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct);
             if (bytesRead < PdfMagicBytes.Length || !buffer.SequenceEqual(PdfMagicBytes))
             {
                 return Result.Failure<DocumentUploadResult>(
@@ -72,13 +72,11 @@ public class DocumentService : IDocumentService, IScopedDependency
             effectiveContentType = "text/plain";
         }
 
-        stream.Position = 0;
-        var hashBytes = await SHA256.HashDataAsync(stream, ct);
+        command.Stream.Position = 0;
+        var hashBytes = await SHA256.HashDataAsync(command.Stream, ct);
         var contentHash = Convert.ToHexStringLower(hashBytes);
 
-        var existingDoc = await _dbContext.Documents
-            .Include(d => d.IngestionJobs)
-            .FirstOrDefaultAsync(d => d.ContentHash == contentHash, ct);
+        var existingDoc = await _documentRepository.FindByContentHashWithJobsAsync(contentHash, ct);
 
         if (existingDoc != null)
         {
@@ -135,8 +133,8 @@ public class DocumentService : IDocumentService, IScopedDependency
                 UpdatedAt = DateTimeOffset.UtcNow
             };
 
-            _dbContext.IngestionJobs.Add(recoveryJob);
-            await _dbContext.SaveChangesAsync(ct);
+            _jobRepository.Add(recoveryJob);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             await _queue.EnqueueAsync(recoveryJobId, ct);
 
@@ -150,15 +148,15 @@ public class DocumentService : IDocumentService, IScopedDependency
         var jobId = Guid.NewGuid();
         var storageKey = $"documents/{documentId}/original{extension}";
 
-        stream.Position = 0;
-        await _storage.SaveAsync(storageKey, stream, effectiveContentType, ct);
+        command.Stream.Position = 0;
+        await _storage.SaveAsync(storageKey, command.Stream, effectiveContentType, ct);
 
         var document = new Document
         {
             Id = documentId,
-            FileName = fileName,
+            FileName = command.FileName,
             ContentType = effectiveContentType,
-            FileSizeBytes = fileLength,
+            FileSizeBytes = command.FileLength,
             ContentHash = contentHash,
             StorageKey = storageKey,
             NeedsOcr = false,
@@ -174,92 +172,12 @@ public class DocumentService : IDocumentService, IScopedDependency
             UpdatedAt = DateTimeOffset.UtcNow
         };
 
-        _dbContext.Documents.Add(document);
-        _dbContext.IngestionJobs.Add(job);
-        await _dbContext.SaveChangesAsync(ct);
+        _documentRepository.Add(document);
+        _jobRepository.Add(job);
+        await _unitOfWork.SaveChangesAsync(ct);
 
         await _queue.EnqueueAsync(jobId, ct);
 
         return Result.Success(new DocumentUploadResult(documentId, jobId));
-    }
-
-    public async Task<Result<IngestionJobStatusResult>> GetJobStatusAsync(
-        Guid jobId,
-        CancellationToken ct = default)
-    {
-        var job = await _dbContext.IngestionJobs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(j => j.Id == jobId, ct);
-
-        if (job == null)
-        {
-            return Result.Failure<IngestionJobStatusResult>(
-                Error.NotFound("Job.NotFound", "Ingestion job not found."));
-        }
-
-        var result = new IngestionJobStatusResult(
-            job.Id,
-            job.DocumentId,
-            job.Status.ToString().ToLowerInvariant(),
-            job.ErrorDetails,
-            job.CreatedAt,
-            job.UpdatedAt);
-
-        return Result.Success(result);
-    }
-
-    public async Task<Result<IReadOnlyList<DocumentResponse>>> GetDocumentsAsync(CancellationToken ct = default)
-    {
-        var rawDocs = await _dbContext.Documents
-            .AsNoTracking()
-            .Select(d => new DocumentResponse(
-                d.Id,
-                d.FileName,
-                d.ContentType,
-                d.FileSizeBytes,
-                d.ContentHash,
-                d.NeedsOcr,
-                d.CreatedAt))
-            .ToListAsync(ct);
-
-        var documents = rawDocs.OrderByDescending(d => d.CreatedAt).ToList();
-
-        return Result.Success<IReadOnlyList<DocumentResponse>>(documents);
-    }
-
-    public async Task<Result<DocumentDetailsResponse>> GetDocumentByIdAsync(Guid documentId, CancellationToken ct = default)
-    {
-        var doc = await _dbContext.Documents
-            .AsNoTracking()
-            .Include(d => d.IngestionJobs)
-            .FirstOrDefaultAsync(d => d.Id == documentId, ct);
-
-        if (doc == null)
-        {
-            return Result.Failure<DocumentDetailsResponse>(
-                Error.NotFound("Document.NotFound", "Document not found."));
-        }
-
-        var jobSummaries = doc.IngestionJobs
-            .OrderByDescending(j => j.CreatedAt)
-            .Select(j => new IngestionJobSummaryResponse(
-                j.Id,
-                j.Status.ToString().ToLowerInvariant(),
-                j.ErrorDetails,
-                j.CreatedAt,
-                j.UpdatedAt))
-            .ToList();
-
-        var response = new DocumentDetailsResponse(
-            doc.Id,
-            doc.FileName,
-            doc.ContentType,
-            doc.FileSizeBytes,
-            doc.ContentHash,
-            doc.NeedsOcr,
-            doc.CreatedAt,
-            jobSummaries);
-
-        return Result.Success(response);
     }
 }

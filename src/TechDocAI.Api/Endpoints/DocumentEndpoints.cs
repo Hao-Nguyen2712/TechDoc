@@ -1,7 +1,7 @@
 using TechDocAI.Application.Abstractions;
-using TechDocAI.Application.Dtos;
 using TechDocAI.Application.UseCases.Documents.GetDocument;
 using TechDocAI.Application.UseCases.Documents.ListDocuments;
+using TechDocAI.Application.UseCases.Documents.UploadDocument;
 
 namespace TechDocAI.Api.Endpoints;
 
@@ -11,7 +11,7 @@ public static class DocumentEndpoints
     {
         app.MapPost("/documents", async (
             IFormFile? file,
-            IDocumentService documentService,
+            UploadDocumentHandler handler,
             CancellationToken ct) =>
         {
             if (file == null || file.Length == 0)
@@ -24,11 +24,12 @@ public static class DocumentEndpoints
                 ? "text/plain"
                 : "application/pdf";
 
-            var result = await documentService.UploadAsync(
-                stream,
-                file.FileName,
-                string.IsNullOrWhiteSpace(file.ContentType) ? defaultContentType : file.ContentType,
-                file.Length,
+            var result = await handler.HandleAsync(
+                new UploadDocumentCommand(
+                    stream,
+                    file.FileName,
+                    string.IsNullOrWhiteSpace(file.ContentType) ? defaultContentType : file.ContentType,
+                    file.Length),
                 ct);
 
             if (result.IsFailure)

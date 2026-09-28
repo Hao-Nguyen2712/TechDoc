@@ -1,6 +1,6 @@
 using TechDocAI.Application.UseCases.Documents;
 
-namespace TechDocAI.Application.Dtos;
+namespace TechDocAI.Application.UseCases.Documents.UploadDocument;
 
 public enum UploadOutcome
 {
