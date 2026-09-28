@@ -1,23 +1,28 @@
+using Microsoft.EntityFrameworkCore;
 using TechDocAI.Api.Endpoints;
+using TechDocAI.Api.Workers;
+using TechDocAI.Application.Extensions;
 using TechDocAI.Infrastructure.Extensions;
 using TechDocAI.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add API & Infrastructure services
+// Add API, Application & Infrastructure services
 builder.Services.AddOpenApi();
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
+builder.Services.AddHostedService<IngestionWorker>();
 
 var app = builder.Build();
 
-// Ensure Database Created only if not testing
+// Apply migrations only if not testing
 if (!app.Environment.IsEnvironment("Testing"))
 {
     try
     {
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TechDocDbContext>();
-        dbContext.Database.EnsureCreated();
+        dbContext.Database.Migrate();
     }
     catch (Exception)
     {

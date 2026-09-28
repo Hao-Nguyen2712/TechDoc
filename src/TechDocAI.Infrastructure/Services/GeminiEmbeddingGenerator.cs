@@ -2,6 +2,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using TechDocAI.Application.Common;
 using TechDocAI.Core.Common;
 
 namespace TechDocAI.Infrastructure.Services;

@@ -13,4 +13,4 @@ The upload endpoint stores the Document binary, records the Document and its Ing
 
 - A process crash loses the queued job from memory; the job row stays non-terminal and recovery is re-uploading the file (see ADR 0009).
 - The design assumes a single API instance; running more than one requires revisiting job claiming before scaling out.
-- Swapping in a broker later means replacing only the enqueue/consume seam — pipeline stages live in `TechDocAI.Core`/`TechDocAI.Infrastructure` and don't know how they are hosted.
+- Swapping in a broker later means replacing only the enqueue/consume seam (`IIngestionJobQueue`) — pipeline logic lives in the `ProcessIngestionJobHandler` use case in `TechDocAI.Application` and doesn't know how it is hosted; the dequeue loop is host glue in `TechDocAI.Api` (amended by ADR 0010).

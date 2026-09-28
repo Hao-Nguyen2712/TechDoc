@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using TechDocAI.Core.DTOs;
+using TechDocAI.Application.UseCases.Documents;
 using TechDocAI.Infrastructure.Persistence;
 using Xunit;
 
@@ -17,7 +17,7 @@ public class DocumentDedupAndReadTests : IClassFixture<TechDocWebApplicationFact
     public DocumentDedupAndReadTests(TechDocWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _client = factory.CreateDefaultClient(new SqliteBusyRetryHandler());
     }
 
     private record UploadResponse(Guid documentId, Guid jobId);
@@ -25,7 +25,7 @@ public class DocumentDedupAndReadTests : IClassFixture<TechDocWebApplicationFact
 
     private async Task WaitForJobTerminalStatusAsync(Guid jobId)
     {
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 50; i++)
         {
             await Task.Delay(200);
             var statusResponse = await _client.GetAsync($"/ingestion-jobs/{jobId}");

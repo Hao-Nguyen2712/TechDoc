@@ -1,7 +1,8 @@
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
 using TechDocAI.Core.Common;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Application.Common;
 
 namespace TechDocAI.Infrastructure.VectorStore;
 

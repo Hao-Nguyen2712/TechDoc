@@ -1,6 +1,6 @@
 using System.Threading.Channels;
-using TechDocAI.Core.Common;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Application.Common;
 
 namespace TechDocAI.Infrastructure.Queue;
 

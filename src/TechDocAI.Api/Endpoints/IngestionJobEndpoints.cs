@@ -1,4 +1,4 @@
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.UseCases.Documents.GetJobStatus;
 
 namespace TechDocAI.Api.Endpoints;
 
@@ -8,10 +8,10 @@ public static class IngestionJobEndpoints
     {
         app.MapGet("/ingestion-jobs/{id:guid}", async (
             Guid id,
-            IDocumentService documentService,
+            GetJobStatusHandler handler,
             CancellationToken ct) =>
         {
-            var result = await documentService.GetJobStatusAsync(id, ct);
+            var result = await handler.HandleAsync(new GetJobStatusQuery(id), ct);
 
             if (result.IsFailure)
             {

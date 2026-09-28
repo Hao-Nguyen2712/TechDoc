@@ -1,5 +1,6 @@
-using TechDocAI.Core.DTOs;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Application.UseCases.Documents.GetDocument;
+using TechDocAI.Application.UseCases.Documents.ListDocuments;
+using TechDocAI.Application.UseCases.Documents.UploadDocument;
 
 namespace TechDocAI.Api.Endpoints;
 
@@ -9,7 +10,7 @@ public static class DocumentEndpoints
     {
         app.MapPost("/documents", async (
             IFormFile? file,
-            IDocumentService documentService,
+            UploadDocumentHandler handler,
             CancellationToken ct) =>
         {
             if (file == null || file.Length == 0)
@@ -22,11 +23,12 @@ public static class DocumentEndpoints
                 ? "text/plain"
                 : "application/pdf";
 
-            var result = await documentService.UploadAsync(
-                stream,
-                file.FileName,
-                string.IsNullOrWhiteSpace(file.ContentType) ? defaultContentType : file.ContentType,
-                file.Length,
+            var result = await handler.HandleAsync(
+                new UploadDocumentCommand(
+                    stream,
+                    file.FileName,
+                    string.IsNullOrWhiteSpace(file.ContentType) ? defaultContentType : file.ContentType,
+                    file.Length),
                 ct);
 
             if (result.IsFailure)
@@ -50,19 +52,19 @@ public static class DocumentEndpoints
 
 
         app.MapGet("/documents", async (
-            IDocumentService documentService,
+            ListDocumentsHandler handler,
             CancellationToken ct) =>
         {
-            var result = await documentService.GetDocumentsAsync(ct);
+            var result = await handler.HandleAsync(new ListDocumentsQuery(), ct);
             return Results.Ok(result.Value);
         });
 
         app.MapGet("/documents/{id:guid}", async (
             Guid id,
-            IDocumentService documentService,
+            GetDocumentHandler handler,
             CancellationToken ct) =>
         {
-            var result = await documentService.GetDocumentByIdAsync(id, ct);
+            var result = await handler.HandleAsync(new GetDocumentQuery(id), ct);
             if (result.IsFailure)
             {
                 return Results.NotFound(new { error = result.Error.Description });

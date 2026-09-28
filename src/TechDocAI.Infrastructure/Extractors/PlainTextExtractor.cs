@@ -1,10 +1,12 @@
 using System.Text;
+using TechDocAI.Application.Abstractions;
+using TechDocAI.Application.Common;
 using TechDocAI.Core.Common;
-using TechDocAI.Core.Interfaces;
+using TechDocAI.Core.Extraction;
 
 namespace TechDocAI.Infrastructure.Extractors;
 
-public class PlainTextExtractor : ITransientDependency
+public class PlainTextExtractor : IPlainTextExtractor, ITransientDependency
 {
     public async Task<Result<ExtractionResult>> ExtractAsync(Stream stream, CancellationToken ct = default)
     {
