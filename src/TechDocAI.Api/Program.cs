@@ -1,11 +1,13 @@
 using TechDocAI.Api.Endpoints;
+using TechDocAI.Application.Extensions;
 using TechDocAI.Infrastructure.Extensions;
 using TechDocAI.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add API & Infrastructure services
+// Add API, Application & Infrastructure services
 builder.Services.AddOpenApi();
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 var app = builder.Build();

@@ -1,5 +1,7 @@
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Dtos;
+using TechDocAI.Application.UseCases.Documents.GetDocument;
+using TechDocAI.Application.UseCases.Documents.ListDocuments;
 
 namespace TechDocAI.Api.Endpoints;
 
@@ -50,19 +52,19 @@ public static class DocumentEndpoints
 
 
         app.MapGet("/documents", async (
-            IDocumentService documentService,
+            ListDocumentsHandler handler,
             CancellationToken ct) =>
         {
-            var result = await documentService.GetDocumentsAsync(ct);
+            var result = await handler.HandleAsync(new ListDocumentsQuery(), ct);
             return Results.Ok(result.Value);
         });
 
         app.MapGet("/documents/{id:guid}", async (
             Guid id,
-            IDocumentService documentService,
+            GetDocumentHandler handler,
             CancellationToken ct) =>
         {
-            var result = await documentService.GetDocumentByIdAsync(id, ct);
+            var result = await handler.HandleAsync(new GetDocumentQuery(id), ct);
             if (result.IsFailure)
             {
                 return Results.NotFound(new { error = result.Error.Description });

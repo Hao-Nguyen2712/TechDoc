@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using TechDocAI.Application.Dtos;
+using TechDocAI.Application.UseCases.Documents;
 using TechDocAI.Infrastructure.Persistence;
 using Xunit;
 

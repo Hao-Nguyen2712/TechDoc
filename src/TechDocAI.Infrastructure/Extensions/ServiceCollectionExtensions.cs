@@ -4,9 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Minio;
 using Qdrant.Client;
-using System.Reflection;
 using TechDocAI.Application.Abstractions;
-using TechDocAI.Application.Common;
+using TechDocAI.Application.Extensions;
 using TechDocAI.Infrastructure.Persistence;
 using TechDocAI.Infrastructure.Storage;
 using TechDocAI.Infrastructure.Workers;
@@ -57,66 +56,8 @@ public static class ServiceCollectionExtensions
         // 3. Hosted Service
         services.AddHostedService<IngestionJobBackgroundWorker>();
 
-        // 4. Auto-register convention dependencies from Infrastructure and Core assemblies
-        services.AddConventionDependencies(
-            typeof(TechDocDbContext).Assembly,
-            typeof(IScopedDependency).Assembly);
-
-        return services;
-    }
-
-    public static IServiceCollection AddConventionDependencies(
-        this IServiceCollection services,
-        params Assembly[] assemblies)
-    {
-        var markerTypes = new HashSet<Type>
-        {
-            typeof(IScopedDependency),
-            typeof(ITransientDependency),
-            typeof(ISingletonDependency)
-        };
-
-        foreach (var assembly in assemblies)
-        {
-            var types = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && !t.IsGenericTypeDefinition);
-
-            foreach (var type in types)
-            {
-                ServiceLifetime? lifetime = null;
-
-                if (typeof(IScopedDependency).IsAssignableFrom(type))
-                {
-                    lifetime = ServiceLifetime.Scoped;
-                }
-                else if (typeof(ITransientDependency).IsAssignableFrom(type))
-                {
-                    lifetime = ServiceLifetime.Transient;
-                }
-                else if (typeof(ISingletonDependency).IsAssignableFrom(type))
-                {
-                    lifetime = ServiceLifetime.Singleton;
-                }
-
-                if (lifetime == null)
-                {
-                    continue;
-                }
-
-                // Register for implemented interfaces (excluding markers and system interfaces)
-                var interfaces = type.GetInterfaces()
-                    .Where(i => !markerTypes.Contains(i) && i != typeof(IDisposable) && i != typeof(IAsyncDisposable))
-                    .ToList();
-
-                foreach (var iface in interfaces)
-                {
-                    services.Add(new ServiceDescriptor(iface, type, lifetime.Value));
-                }
-
-                // Also register the concrete class itself
-                services.Add(new ServiceDescriptor(type, type, lifetime.Value));
-            }
-        }
+        // 4. Auto-register convention dependencies from the Infrastructure assembly
+        services.AddConventionDependencies(typeof(TechDocDbContext).Assembly);
 
         return services;
     }

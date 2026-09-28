@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Application.Common;
 using TechDocAI.Application.Dtos;
+using TechDocAI.Application.UseCases.Documents;
 using TechDocAI.Core.Common;
 using TechDocAI.Core.Entities;
 using TechDocAI.Infrastructure.Persistence;

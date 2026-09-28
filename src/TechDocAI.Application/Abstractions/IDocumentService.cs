@@ -1,4 +1,5 @@
 using TechDocAI.Application.Dtos;
+using TechDocAI.Application.UseCases.Documents;
 using TechDocAI.Core.Common;
 
 namespace TechDocAI.Application.Abstractions;

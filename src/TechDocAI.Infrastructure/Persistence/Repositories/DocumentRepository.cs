@@ -25,11 +25,17 @@ public class DocumentRepository : IDocumentRepository, IScopedDependency
             .Include(d => d.IngestionJobs)
             .FirstOrDefaultAsync(d => d.ContentHash == contentHash, ct);
 
-    public async Task<IReadOnlyList<Document>> ListAsync(CancellationToken ct = default) =>
-        await _dbContext.Documents
+    public async Task<IReadOnlyList<Document>> ListAsync(CancellationToken ct = default)
+    {
+        // Ordered client-side: DateTimeOffset ordering is not translatable by the SQLite test provider.
+        var documents = await _dbContext.Documents
             .AsNoTracking()
-            .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(ct);
+
+        return documents
+            .OrderByDescending(d => d.CreatedAt)
+            .ToList();
+    }
 
     public void Add(Document document) => _dbContext.Documents.Add(document);
 }
