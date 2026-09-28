@@ -3,16 +3,16 @@ using TechDocAI.Application.UseCases.Ingestion.ProcessIngestionJob;
 
 namespace TechDocAI.Api.Workers;
 
-public class IngestionJobBackgroundWorker : BackgroundService
+public class IngestionWorker : BackgroundService
 {
     private readonly IIngestionJobQueue _queue;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<IngestionJobBackgroundWorker> _logger;
+    private readonly ILogger<IngestionWorker> _logger;
 
-    public IngestionJobBackgroundWorker(
+    public IngestionWorker(
         IIngestionJobQueue queue,
         IServiceProvider serviceProvider,
-        ILogger<IngestionJobBackgroundWorker> logger)
+        ILogger<IngestionWorker> logger)
     {
         _queue = queue;
         _serviceProvider = serviceProvider;

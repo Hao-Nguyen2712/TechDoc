@@ -8,10 +8,8 @@
     <Project Path="src/TechDocAI.Core/TechDocAI.Core.csproj" Id="3fc921a3-afbf-49ee-ac35-d551bdf5deb5" />
     <Project Path="src/TechDocAI.Infrastructure/TechDocAI.Infrastructure.csproj" Id="5dd9e7ea-786b-4109-9dfc-aa8006da6f70" />
   </Folder>
-  <Folder Name="/test/">
-    <Project Path="test/TechDocAI.ArchitectureTests/TechDocAI.ArchitectureTests.csproj" />
-  </Folder>
   <Folder Name="/tests/">
+    <Project Path="test/TechDocAI.ArchitectureTests/TechDocAI.ArchitectureTests.csproj" />
     <Project Path="test/TechDocAI.IntegrationTests/TechDocAI.IntegrationTests.csproj" />
     <Project Path="test/TechDocAI.UnitTests/TechDocAI.UnitTests.csproj" />
   </Folder>

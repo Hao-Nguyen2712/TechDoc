@@ -1,12 +1,11 @@
+using NetArchTest.Rules;
 using TechDocAI.Application.Abstractions;
 using TechDocAI.Core.Entities;
 using TechDocAI.Infrastructure.Persistence;
-using NetArchTest.Rules;
-using Xunit;
 
 namespace TechDocAI.ArchitectureTests;
 
-// Dependency rules from ADR 0010 (four-project layering, ports-follow-consumer).
+// Dependency rules (four-project layering, ports-follow-consumer).
 // The composition-root exception applies to Program.cs only.
 public class DependencyRuleTests
 {

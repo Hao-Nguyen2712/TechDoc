@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
-builder.Services.AddHostedService<IngestionJobBackgroundWorker>();
+builder.Services.AddHostedService<IngestionWorker>();
 
 var app = builder.Build();
 
